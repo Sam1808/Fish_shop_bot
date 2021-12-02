@@ -105,7 +105,10 @@ python3 bot_tg.py
 ### 4. Примеры
 
 Если все шаги выполнены верно, вы получите примерно следующий результат:   
-![fish_shop.gif](fish_shop.gif)
+![fish_shop.gif](fish_shop.gif)  
+
+И ещё один пример:  
+**Временно** прототип бота развернут на [HEROKU](https://dashboard.heroku.com), можете попробовать его в действии [@My_DVMN_lessons_bot](https://t.me/My_DVMN_lessons_bot)
 
 ### 5. Известные проблемы
 *Рекомендация:* Будьте внимательны с уровнем прав доступа в [Elastic Path](https://www.elasticpath.com), изучите 
