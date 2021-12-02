@@ -24,12 +24,13 @@ def add_product_to_cart(cart_id, product_id, quantity):
         'Authorization': f'Bearer {get_actual_token()}',
         'Content-Type': 'application/json',
     }
-    data = {"data":
-        {
-            "id": product_id,
-            "type": "cart_item",
-            "quantity": quantity
-        }
+    data = {
+        "data":
+            {
+                "id": product_id,
+                "type": "cart_item",
+                "quantity": quantity
+            }
     }
     response = requests.post(
         f'{API_BASE_URL}/v2/carts/{cart_id}/items',
@@ -92,12 +93,13 @@ def create_a_customer(name, email):
         'Authorization': f'Bearer {get_actual_token()}',
         'Content-Type': 'application/json',
     }
-    data = {"data":
-        {
-            "type": "customer",
-            "name": name,
-            "email": email
-        }
+    data = {
+        "data":
+            {
+                "type": "customer",
+                "name": name,
+                "email": email
+            }
     }
     response = requests.post(
         f'{API_BASE_URL}/v2/customers',
@@ -150,10 +152,15 @@ def get_actual_token():
 
 @retry(tries=3, timeout=1)
 def get_a_customers(customer_id=None):
-    """Возвращает список всех покупателей или конкретного покупателя по его ID"""
+    """
+    Возвращает список всех покупателей или конкретного покупателя по его ID
+    """
 
     headers = {'Authorization': f'Bearer {get_actual_token()}'}
-    url = f'{API_BASE_URL}/v2/customers/{customer_id}' if customer_id else f'{API_BASE_URL}/v2/customers'
+
+    url = f'{API_BASE_URL}/v2/customers/'
+    if customer_id:
+        url += customer_id
 
     response = requests.get(url, headers=headers)
     response.raise_for_status()
@@ -198,7 +205,8 @@ def get_cart_status(card_id, items=False):
 @retry(tries=3, timeout=1)
 def get_products(product_id=None):
     """
-    Возвращает описание всех продуктов или описание конкретного продукта по его ID
+    Возвращает описание всех продуктов
+    или описание конкретного продукта по его ID
     """
 
     headers = {'Authorization': f'Bearer {get_actual_token()}'}
@@ -232,7 +240,5 @@ if __name__ == '__main__':
     """
     Здесь формируем запросы
     """
-    # example = get_products()
+    # example = get_a_customers()
     # print(example)
-
-
