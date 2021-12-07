@@ -4,12 +4,12 @@ import logging
 
 
 from dotenv import load_dotenv
-from shop_utils import add_product_to_cart
-from shop_utils import create_a_customer
-from shop_utils import get_cart_status
-from shop_utils import get_files
-from shop_utils import get_products
-from shop_utils import remove_item_from_cart
+from moltin_api import add_product_to_cart
+from moltin_api import create_a_customer
+from moltin_api import get_cart_status
+from moltin_api import get_files
+from moltin_api import get_products
+from moltin_api import remove_item_from_cart
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater

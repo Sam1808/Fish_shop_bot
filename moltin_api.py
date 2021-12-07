@@ -5,7 +5,6 @@ import requests
 from dotenv import load_dotenv
 from funcy import retry
 
-load_dotenv()
 API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.moltin.com')
 CLIENT_ID = os.environ["CLIENT_ID"]
 CLIENT_SECRET = os.environ["CLIENT_SECRET"]
@@ -237,8 +236,10 @@ def remove_item_from_cart(card_id, product_id):
 
 
 if __name__ == '__main__':
+    load_dotenv()
     """
     Здесь формируем запросы
     """
+
     # example = get_a_customers()
     # print(example)

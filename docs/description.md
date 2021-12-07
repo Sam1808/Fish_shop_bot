@@ -1,9 +1,9 @@
 ### Подготавливаем данные в [Elastic Path](https://www.elasticpath.com) для работы магазина
 
-Методы для работы с API от Elastic Path в файле `shop_utils.py`.  
+Методы для работы с API от Elastic Path в файле `moltin_api.py`.  
 <hr>
 
-Для чего все это пришлось сделать описано [здесь](./README.md).
+Для чего все это пришлось сделать описано [здесь](../README.md).
 
 - `add_product_to_cart(cart_id=098765, product_id=123-45345-6546, quantity=5`)  
 
