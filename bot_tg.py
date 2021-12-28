@@ -26,7 +26,8 @@ def _error(_, context):
 
 def start(update, _):
     """
-    Функция start - первая функция при запуске бота.
+    Функция start - запуск бота (функция partial_handle_users_reply)
+    и переход в состояние HANDLE_MENU.
     """
 
     keyboard = list()
@@ -57,6 +58,10 @@ def handle_menu(update, _):
     """Предложение и выбор товара"""
 
     query = update.callback_query
+
+    if query.data == '/cart':
+        return handle_cart(update, _)
+
     product_description = get_products(product_id=query.data)['data']
     unit_price = \
         product_description['meta']['display_price']['with_tax']['formatted']
@@ -95,6 +100,12 @@ def handle_description(update, _):
     """Добавление определенного кол-ва товара в корзину"""
 
     query = update.callback_query
+
+    if '/back' == query.data:
+        return start(update, _)
+    elif '/cart' == query.data:
+        return handle_cart(update, _)
+
     purchase = str(query.data).split('>')
     purchase_id = purchase[0]
     purchase_quantity = int(purchase[1])
@@ -128,7 +139,11 @@ def handle_cart(update, _):
     chat_id = update.effective_message.chat_id
     query = update.callback_query
 
-    if 'delete' in query.data:
+    if '/pay' == query.data:
+        return handle_email(update, _)
+    elif '/back' == query.data:
+        return start(update, _)
+    elif 'delete>' in query.data:
         product_id = str(query.data).split('>')[1]
         remove_item_from_cart(chat_id, product_id)
 
@@ -179,7 +194,7 @@ def handle_cart(update, _):
 
 
 def handle_email(update, _):
-    """Функция которая пользователя на основе полученного email"""
+    """Функция, которая создает пользователя на основе полученного email"""
 
     if update.message:
         keyboard = [
@@ -248,12 +263,8 @@ def handle_users_reply(update, _, db_connection):
     else:
         return
 
-    if user_reply == '/start' or user_reply == '/back':
+    if user_reply == '/start':
         user_state = 'START'
-    elif user_reply == '/cart':
-        user_state = 'HANDLE_CART'
-    elif user_reply == '/pay':
-        user_state = 'WAITING_EMAIL'
     else:
         user_state = db_connection.get(chat_id).decode("utf-8")
 
