@@ -15,6 +15,7 @@ from moltin_api import remove_item_from_cart
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
+from textwrap import dedent
 
 
 def _error(_, context):
@@ -59,11 +60,11 @@ def handle_menu(update, _):
     product_description = get_products(product_id=query.data)['data']
     unit_price = \
         product_description['meta']['display_price']['with_tax']['formatted']
-    message = f'''
-        {product_description['name']}
-        Описание: {product_description['description']}
-        Цена: {unit_price} за килограмм
-    '''
+    message = f'''\
+    {product_description['name']}
+    Описание: {product_description['description']}
+    Цена: {unit_price} за килограмм'''
+
     file_id = product_description['relationships']['main_image']['data']['id']
     file_description = get_files(file_id=file_id)
     file_url = file_description['data']['link']['href']
@@ -83,7 +84,7 @@ def handle_menu(update, _):
     query.message.delete()
     query.message.reply_photo(
         photo=file_url,
-        caption=message,
+        caption=dedent(message),
         reply_markup=reply_markup
     )
 
@@ -110,12 +111,13 @@ def handle_description(update, _):
 
     product_description = get_products(product_id=purchase_id)['data']
 
-    message = f'''В корзину добавлен товар:
-{product_description['name']}.
-Количество: {purchase_quantity} килограмм'''
+    message = f'''\
+    В корзину добавлен товар:
+    {product_description['name']}.
+    Количество: {purchase_quantity} килограмм'''
 
     query.message.delete()
-    query.message.reply_text(text=message, reply_markup=reply_markup)
+    query.message.reply_text(text=dedent(message), reply_markup=reply_markup)
 
     query.answer()
     return "HANDLE_DESCRIPTION"
@@ -142,12 +144,14 @@ def handle_cart(update, _):
             product['meta']['display_price']['with_tax']['unit']['formatted']
         total_price = \
             product['meta']['display_price']['with_tax']['value']['formatted']
-        product_message += f'''\n{product['name']}
-{product['description']}
-Цена за килограмм(кг): {unit_price}
-Количество: {product['quantity']} кг
-Всего цена: {total_price}
-'''
+        product_message += dedent(f'''        
+        {product['name']}
+        {product['description']}
+        Цена за килограмм(кг): {unit_price}
+        Количество: {product['quantity']} кг
+        Всего цена: {total_price}
+        ''')
+
         keyboard.append(
             [
                 InlineKeyboardButton(
@@ -158,7 +162,7 @@ def handle_cart(update, _):
         )
     total_cost = \
         cart_status['data']['meta']['display_price']['with_tax']['formatted']
-    product_message += f'Итого цена: {total_cost}'
+    product_message += f'\nИтого цена: {total_cost}'
 
     keyboard.append(
         [
@@ -202,16 +206,17 @@ def handle_email(update, _):
             username = query.message.from_user['username']
             email = str(query.data).split('>')[1]
             customer = create_a_customer(username, email)['data']
-            message = f'''
-Покупатель: {customer['name']}
-E-mail: {customer['email']}
-ID: {customer['id']}\n'''
+            message = f'''\
+            Покупатель: {customer['name']}
+            E-mail: {customer['email']}
+            ID: {customer['id']}
+            '''
             query.message.delete()
 
         elif '/wrong_email' in query.data:
             query.message.delete()
 
-        query.message.reply_text(text=message)
+        query.message.reply_text(text=dedent(message))
         query.answer()
 
     return 'WAITING_EMAIL'
