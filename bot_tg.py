@@ -158,7 +158,7 @@ def handle_cart(update, _):
             product['meta']['display_price']['with_tax']['unit']['formatted']
         total_price = \
             product['meta']['display_price']['with_tax']['value']['formatted']
-        product_message += dedent(f'''        
+        product_message += dedent(f'''
         {product['name']}
         {product['description']}
         Цена за килограмм(кг): {unit_price}
@@ -303,9 +303,15 @@ if __name__ == '__main__':
     )
 
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(CallbackQueryHandler(partial_handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.text, partial_handle_users_reply))
-    dispatcher.add_handler(CommandHandler('start', partial_handle_users_reply))
+    dispatcher.add_handler(
+        CallbackQueryHandler(partial_handle_users_reply)
+    )
+    dispatcher.add_handler(
+        MessageHandler(Filters.text, partial_handle_users_reply)
+    )
+    dispatcher.add_handler(
+        CommandHandler('start', partial_handle_users_reply)
+    )
     dispatcher.add_error_handler(_error)
     updater.start_polling()
     updater.idle()
