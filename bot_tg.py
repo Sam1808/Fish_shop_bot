@@ -41,14 +41,14 @@ def start(update, _):
     reply_markup = InlineKeyboardMarkup(keyboard)
     message = 'Список предложений:'
     if update.message:
-        update.message.delete()
         update.message.reply_text(text=message, reply_markup=reply_markup)
+        update.message.delete()
     else:
-        update.callback_query.message.delete()
         update.callback_query.message.reply_text(
             text=message,
             reply_markup=reply_markup
         )
+        update.callback_query.message.delete()
 
     return "HANDLE_MENU"
 
@@ -80,13 +80,12 @@ def handle_menu(update, _):
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-
-    query.message.delete()
     query.message.reply_photo(
         photo=file_url,
         caption=dedent(message),
         reply_markup=reply_markup
     )
+    query.message.delete()
 
     query.answer()
     return "HANDLE_DESCRIPTION"
@@ -116,8 +115,8 @@ def handle_description(update, _):
     {product_description['name']}.
     Количество: {purchase_quantity} килограмм'''
 
-    query.message.delete()
     query.message.reply_text(text=dedent(message), reply_markup=reply_markup)
+    query.message.delete()
 
     query.answer()
     return "HANDLE_DESCRIPTION"
@@ -172,8 +171,8 @@ def handle_cart(update, _):
     )
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    query.message.delete()
     query.message.reply_text(text=product_message, reply_markup=reply_markup)
+    query.message.delete()
 
     query.answer()
     return 'HANDLE_CART'
