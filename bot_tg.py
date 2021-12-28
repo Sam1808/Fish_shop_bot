@@ -28,7 +28,7 @@ def start(update, _):
     Функция start - первая функция при запуске бота.
     """
 
-    keyboard = []
+    keyboard = list()
     for product in get_products()['data']:
         product_id = str(product['id'])
         keyboard.append(
@@ -68,16 +68,16 @@ def handle_menu(update, _):
     file_description = get_files(file_id=file_id)
     file_url = file_description['data']['link']['href']
 
-    keyboard = list()
-    keyboard.append(
+    keyboard = [
         [
             InlineKeyboardButton('1кг', callback_data=f'{query.data}>1'),
             InlineKeyboardButton('5кг', callback_data=f'{query.data}>5'),
             InlineKeyboardButton('10кг', callback_data=f'{query.data}>10'),
-        ]
-    )
-    keyboard.append([InlineKeyboardButton('Назад', callback_data='/back')])
-    keyboard.append([InlineKeyboardButton('Корзина', callback_data='/cart')])
+        ],
+        [InlineKeyboardButton('Назад', callback_data='/back')],
+        [InlineKeyboardButton('Корзина', callback_data='/cart')],
+    ]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     query.message.delete()
@@ -102,9 +102,10 @@ def handle_description(update, _):
     chat_id = update.effective_message.chat_id
     add_product_to_cart(chat_id, purchase_id, purchase_quantity)
 
-    keyboard = list()
-    keyboard.append([InlineKeyboardButton('Назад', callback_data='/back')])
-    keyboard.append([InlineKeyboardButton('Корзина', callback_data='/cart')])
+    keyboard = [
+        [InlineKeyboardButton('Назад', callback_data='/back')],
+        [InlineKeyboardButton('Корзина', callback_data='/cart')],
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     product_description = get_products(product_id=purchase_id)['data']
@@ -178,8 +179,7 @@ def handle_email(update, _):
     """Функция которая пользователя на основе полученного email"""
 
     if update.message:
-        keyboard = list()
-        keyboard.append(
+        keyboard = [
             [
                 InlineKeyboardButton(
                     'Верно',
@@ -187,7 +187,8 @@ def handle_email(update, _):
                 ),
                 InlineKeyboardButton('Я ошибся', callback_data='/wrong_email')
             ],
-        )
+        ]
+
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         message = f'Вы прислали e-mail: {update.message.text}'
