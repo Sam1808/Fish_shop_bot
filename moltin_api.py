@@ -1,13 +1,16 @@
 import json
 import os
 import requests
+import time
 
 from dotenv import load_dotenv
 from funcy import retry
 
-API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.moltin.com')
-CLIENT_ID = os.environ["CLIENT_ID"]
-CLIENT_SECRET = os.environ["CLIENT_SECRET"]
+API_BASE_URL = None
+CLIENT_ID = None
+CLIENT_SECRET = None
+MOLTIN_TOKEN = None
+MOLTIN_TOKEN_EXPIRES_TIME = 0
 
 
 @retry(tries=3, timeout=1)
@@ -20,7 +23,7 @@ def add_product_to_cart(cart_id, product_id, quantity):
     :return: Результат (в т.ч. ошибку) как JSON объект
     """
     headers = {
-        'Authorization': f'Bearer {get_actual_token()}',
+        'Authorization': f'Bearer {get_token()}',
         'Content-Type': 'application/json',
     }
     data = {
@@ -48,7 +51,7 @@ def create_a_file(folder_name='images'):
     Загруженные картинки переименовывает в имя_файла.расширение.uploaded
     Возвращает количество загруженных картинок и их список
     """
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     filenames = os.listdir(folder_name)
     uploaded_files = []
@@ -89,7 +92,7 @@ def create_a_customer(name, email):
     """
 
     headers = {
-        'Authorization': f'Bearer {get_actual_token()}',
+        'Authorization': f'Bearer {get_token()}',
         'Content-Type': 'application/json',
     }
     data = {
@@ -116,7 +119,7 @@ def create_main_image_relationship(product_id, image_id):
      и ID картинки.
     """
     headers = {
-        'Authorization': f'Bearer {get_actual_token()}',
+        'Authorization': f'Bearer {get_token()}',
         'Content-Type': 'application/json',
     }
 
@@ -132,10 +135,17 @@ def create_main_image_relationship(product_id, image_id):
 
 
 @retry(tries=3, timeout=1)
-def get_actual_token():
+def get_token():
     """
-    Возвращает актуальный токен, т.к. токены имеют свойство _протухать_
+    Создает или возвращает актуальный токен, т.к. токены имеют свойство _протухать_
     """
+    global MOLTIN_TOKEN_EXPIRES_TIME
+    global MOLTIN_TOKEN
+
+    current_time = int(time.time())
+    if current_time <= MOLTIN_TOKEN_EXPIRES_TIME:
+        return MOLTIN_TOKEN
+
     data = {
         'client_id': CLIENT_ID,
         'grant_type': 'client_credentials',
@@ -146,7 +156,10 @@ def get_actual_token():
         data=data
     )
     response.raise_for_status()
-    return response.json()['access_token']
+
+    MOLTIN_TOKEN_EXPIRES_TIME = response.json()['expires']
+    MOLTIN_TOKEN = response.json()['access_token']
+    return MOLTIN_TOKEN
 
 
 @retry(tries=3, timeout=1)
@@ -155,7 +168,7 @@ def get_a_customers(customer_id=None):
     Возвращает список всех покупателей или конкретного покупателя по его ID
     """
 
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     url = f'{API_BASE_URL}/v2/customers/'
     if customer_id:
@@ -172,7 +185,7 @@ def get_files(file_id=None):
     """
     Возвращает описание всех загруженных файлов или конкретного файла по его ID
     """
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     url = f'{API_BASE_URL}/v2/files/'
     if file_id:
@@ -189,7 +202,7 @@ def get_cart_status(card_id, items=False):
     """
     Возвращает статус корзины или ее список товаров в ней
     """
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     url = f'{API_BASE_URL}/v2/carts/{card_id}'
     if items:
@@ -208,7 +221,7 @@ def get_products(product_id=None):
     или описание конкретного продукта по его ID
     """
 
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     url = f'{API_BASE_URL}/v2/products/'
     if product_id:
@@ -225,7 +238,7 @@ def remove_item_from_cart(card_id, product_id):
     """
     Удаляет товар из конкретной корзины (cart_id) по ID-товара
     """
-    headers = {'Authorization': f'Bearer {get_actual_token()}'}
+    headers = {'Authorization': f'Bearer {get_token()}'}
 
     url = f'{API_BASE_URL}/v2/carts/{card_id}/items/{product_id}'
 
@@ -235,11 +248,16 @@ def remove_item_from_cart(card_id, product_id):
     return response.json()
 
 
-if __name__ == '__main__':
+def load_environment():
     load_dotenv()
-    """
-    Здесь формируем запросы
-    """
+    global API_BASE_URL
+    global CLIENT_ID
+    global CLIENT_SECRET
 
-    # example = get_a_customers()
-    # print(example)
+    API_BASE_URL = os.environ.get('API_BASE_URL', 'https://api.moltin.com')
+    CLIENT_ID = os.environ["CLIENT_ID"]
+    CLIENT_SECRET = os.environ["CLIENT_SECRET"]
+
+
+if __name__ == '__main__':
+    load_environment()

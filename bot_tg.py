@@ -2,20 +2,19 @@ import os
 import redis
 import logging
 
+from functools import partial
 
-from dotenv import load_dotenv
 from moltin_api import add_product_to_cart
 from moltin_api import create_a_customer
 from moltin_api import get_cart_status
 from moltin_api import get_files
 from moltin_api import get_products
+from moltin_api import load_environment
 from moltin_api import remove_item_from_cart
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Filters, Updater
 from telegram.ext import CallbackQueryHandler, CommandHandler, MessageHandler
-
-_database = None
 
 
 def _error(_, context):
@@ -217,7 +216,7 @@ ID: {customer['id']}\n'''
     return 'WAITING_EMAIL'
 
 
-def handle_users_reply(update, _):
+def handle_users_reply(update, _, db_connection):
     """
     Функция, которая запускается при любом сообщении от пользователя и решает
      как его обработать.
@@ -234,7 +233,7 @@ def handle_users_reply(update, _):
     Если пользователь захочет начать общение с ботом заново, он также может
      воспользоваться этой командой.
     """
-    db = get_database_connection()
+
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -251,7 +250,7 @@ def handle_users_reply(update, _):
     elif user_reply == '/pay':
         user_state = 'WAITING_EMAIL'
     else:
-        user_state = db.get(chat_id).decode("utf-8")
+        user_state = db_connection.get(chat_id).decode("utf-8")
 
     states_functions = {
         'START': start,
@@ -263,36 +262,34 @@ def handle_users_reply(update, _):
     state_handler = states_functions[user_state]
 
     next_state = state_handler(update, _)
-    db.set(chat_id, next_state)
 
-
-def get_database_connection():
-    """
-    Возвращает конекшн с базой данных Redis, либо создаёт новый,
-     если он ещё не создан.
-    """
-    global _database
-    if _database is None:
-        database_password = os.getenv("REDIS-PASSWORD")
-        database_host = os.getenv("REDIS-BASE")
-        database_port = os.getenv("REDIS-PORT")
-        _database = redis.Redis(
-            host=database_host,
-            port=database_port,
-            password=database_password
-        )
-    return _database
+    db_connection.set(chat_id, next_state)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    load_dotenv()
+    load_environment()
 
     updater = Updater(os.environ["TELEGRAM-TOKEN"])
+
+    database_host = os.environ["REDIS-BASE"]
+    database_port = os.environ["REDIS-PORT"]
+    database_password = os.environ["REDIS-PASSWORD"]
+    db_connection = redis.Redis(
+        host=database_host,
+        port=int(database_port),
+        password=database_password
+    )
+
+    partial_handle_users_reply = partial(
+        handle_users_reply,
+        db_connection=db_connection
+    )
+
     dispatcher = updater.dispatcher
-    dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
-    dispatcher.add_handler(MessageHandler(Filters.text, handle_users_reply))
-    dispatcher.add_handler(CommandHandler('start', handle_users_reply))
+    dispatcher.add_handler(CallbackQueryHandler(partial_handle_users_reply))
+    dispatcher.add_handler(MessageHandler(Filters.text, partial_handle_users_reply))
+    dispatcher.add_handler(CommandHandler('start', partial_handle_users_reply))
     dispatcher.add_error_handler(_error)
     updater.start_polling()
     updater.idle()
