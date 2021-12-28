@@ -137,7 +137,8 @@ def create_main_image_relationship(product_id, image_id):
 @retry(tries=3, timeout=1)
 def get_token():
     """
-    Создает или возвращает актуальный токен, т.к. токены имеют свойство _протухать_
+    Создает или возвращает актуальный токен,
+     т.к. токены имеют свойство _протухать_
     """
     global MOLTIN_TOKEN_EXPIRES_TIME
     global MOLTIN_TOKEN
