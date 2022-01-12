@@ -24,14 +24,20 @@ def _error(_, context):
     logging.exception(context.error)
 
 
-def start(update, _):
+def start(update, context):
     """
     Функция start - запуск бота (функция partial_handle_users_reply)
     и переход в состояние HANDLE_MENU.
     """
 
     keyboard = list()
-    for product in get_products()['data']:
+    products = get_products(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+    )
+
+    for product in products['data']:
         product_id = str(product['id'])
         keyboard.append(
             [
@@ -54,15 +60,21 @@ def start(update, _):
     return "HANDLE_MENU"
 
 
-def handle_menu(update, _):
+def handle_menu(update, context):
     """Предложение и выбор товара"""
 
     query = update.callback_query
 
     if query.data == '/cart':
-        return handle_cart(update, _)
+        return handle_cart(update, context)
 
-    product_description = get_products(product_id=query.data)['data']
+    product_description = get_products(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        product_id=query.data
+    )['data']
+
     unit_price = \
         product_description['meta']['display_price']['with_tax']['formatted']
     message = f'''\
@@ -71,7 +83,12 @@ def handle_menu(update, _):
     Цена: {unit_price} за килограмм'''
 
     file_id = product_description['relationships']['main_image']['data']['id']
-    file_description = get_files(file_id=file_id)
+    file_description = get_files(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        file_id=file_id
+    )
     file_url = file_description['data']['link']['href']
 
     keyboard = [
@@ -96,22 +113,29 @@ def handle_menu(update, _):
     return "HANDLE_DESCRIPTION"
 
 
-def handle_description(update, _):
+def handle_description(update, context):
     """Добавление определенного кол-ва товара в корзину"""
 
     query = update.callback_query
 
     if '/back' == query.data:
-        return start(update, _)
+        return start(update, context)
     elif '/cart' == query.data:
-        return handle_cart(update, _)
+        return handle_cart(update, context)
 
     purchase = str(query.data).split('>')
     purchase_id = purchase[0]
     purchase_quantity = int(purchase[1])
 
     chat_id = update.effective_message.chat_id
-    add_product_to_cart(chat_id, purchase_id, purchase_quantity)
+    add_product_to_cart(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        chat_id,
+        purchase_id,
+        purchase_quantity
+    )
 
     keyboard = [
         [InlineKeyboardButton('Назад', callback_data='/back')],
@@ -119,7 +143,12 @@ def handle_description(update, _):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    product_description = get_products(product_id=purchase_id)['data']
+    product_description = get_products(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        product_id=purchase_id
+    )['data']
 
     message = f'''\
     В корзину добавлен товар:
@@ -133,22 +162,39 @@ def handle_description(update, _):
     return "HANDLE_DESCRIPTION"
 
 
-def handle_cart(update, _):
+def handle_cart(update, context):
     """Работа с корзиной"""
 
     chat_id = update.effective_message.chat_id
     query = update.callback_query
 
     if '/pay' == query.data:
-        return handle_email(update, _)
+        return handle_email(update, context)
     elif '/back' == query.data:
-        return start(update, _)
+        return start(update, context)
     elif 'delete>' in query.data:
         product_id = str(query.data).split('>')[1]
-        remove_item_from_cart(chat_id, product_id)
+        remove_item_from_cart(
+            context.bot_data['api_base_url'],
+            context.bot_data['client_id'],
+            context.bot_data['client_secret'],
+            chat_id,
+            product_id
+        )
 
-    cart_status = get_cart_status(chat_id)
-    cart_status_items = get_cart_status(chat_id, items=True)
+    cart_status = get_cart_status(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        chat_id
+    )
+    cart_status_items = get_cart_status(
+        context.bot_data['api_base_url'],
+        context.bot_data['client_id'],
+        context.bot_data['client_secret'],
+        chat_id,
+        items=True
+    )
 
     product_message = ''
     keyboard = list()
@@ -193,7 +239,7 @@ def handle_cart(update, _):
     return 'HANDLE_CART'
 
 
-def handle_email(update, _):
+def handle_email(update, context):
     """Функция, которая создает пользователя на основе полученного email"""
 
     if update.message:
@@ -219,7 +265,13 @@ def handle_email(update, _):
         if '/create_customer' in query.data:
             username = query.message.from_user['username']
             email = str(query.data).split('>')[1]
-            customer = create_a_customer(username, email)['data']
+            customer = create_a_customer(
+                context.bot_data['api_base_url'],
+                context.bot_data['client_id'],
+                context.bot_data['client_secret'],
+                username,
+                email
+            )['data']
             message = f'''\
             Покупатель: {customer['name']}
             E-mail: {customer['email']}
@@ -236,7 +288,14 @@ def handle_email(update, _):
     return 'WAITING_EMAIL'
 
 
-def handle_users_reply(update, _, db_connection):
+def handle_users_reply(
+        update,
+        context,
+        db_connection,
+        api_base_url,
+        client_id,
+        client_secret
+):
     """
     Функция, которая запускается при любом сообщении от пользователя и решает
      как его обработать.
@@ -263,6 +322,15 @@ def handle_users_reply(update, _, db_connection):
     else:
         return
 
+    if not context.bot_data.get('api_base_url'):
+        context.bot_data['api_base_url'] = api_base_url
+
+    if not context.bot_data.get('client_id'):
+        context.bot_data['client_id'] = client_id
+
+    if not context.bot_data.get('client_secret'):
+        context.bot_data['client_secret'] = client_secret
+
     if user_reply == '/start':
         user_state = 'START'
     else:
@@ -277,14 +345,14 @@ def handle_users_reply(update, _, db_connection):
     }
     state_handler = states_functions[user_state]
 
-    next_state = state_handler(update, _)
+    next_state = state_handler(update, context)
 
     db_connection.set(chat_id, next_state)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    load_environment()
+    api_base_url, client_id, client_secret = load_environment()
 
     updater = Updater(os.environ["TELEGRAM-TOKEN"])
 
@@ -299,7 +367,10 @@ if __name__ == '__main__':
 
     partial_handle_users_reply = partial(
         handle_users_reply,
-        db_connection=db_connection
+        db_connection=db_connection,
+        api_base_url=api_base_url,
+        client_id=client_id,
+        client_secret=client_secret
     )
 
     dispatcher = updater.dispatcher
