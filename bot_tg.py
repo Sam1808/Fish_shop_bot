@@ -292,9 +292,6 @@ def handle_users_reply(
         update,
         context,
         db_connection,
-        api_base_url,
-        client_id,
-        client_secret
 ):
     """
     Функция, которая запускается при любом сообщении от пользователя и решает
@@ -321,15 +318,6 @@ def handle_users_reply(
         chat_id = update.callback_query.message.chat_id
     else:
         return
-
-    if not context.bot_data.get('api_base_url'):
-        context.bot_data['api_base_url'] = api_base_url
-
-    if not context.bot_data.get('client_id'):
-        context.bot_data['client_id'] = client_id
-
-    if not context.bot_data.get('client_secret'):
-        context.bot_data['client_secret'] = client_secret
 
     if user_reply == '/start':
         user_state = 'START'
@@ -368,12 +356,13 @@ if __name__ == '__main__':
     partial_handle_users_reply = partial(
         handle_users_reply,
         db_connection=db_connection,
-        api_base_url=api_base_url,
-        client_id=client_id,
-        client_secret=client_secret
     )
 
     dispatcher = updater.dispatcher
+    dispatcher.bot_data['api_base_url'] = api_base_url
+    dispatcher.bot_data['client_id'] = client_id
+    dispatcher.bot_data['client_secret'] = client_secret
+
     dispatcher.add_handler(
         CallbackQueryHandler(partial_handle_users_reply)
     )
