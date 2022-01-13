@@ -202,10 +202,10 @@ def get_token(
         data=data
     )
     response.raise_for_status()
-    json_answer = response.json()
+    token_info = response.json()
 
-    MOLTIN_TOKEN_EXPIRES_TIME = json_answer['expires']
-    MOLTIN_TOKEN = json_answer['access_token']
+    MOLTIN_TOKEN_EXPIRES_TIME = token_info['expires']
+    MOLTIN_TOKEN = token_info['access_token']
     return MOLTIN_TOKEN
 
 
